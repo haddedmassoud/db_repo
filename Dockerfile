@@ -1,16 +1,28 @@
-# Use the official PostgreSQL image as the base image
 FROM postgres:13
 
-# Set environment variables for PostgreSQL
-ENV POSTGRES_USER=user
-ENV POSTGRES_PASSWORD=password
-ENV POSTGRES_DB=mydatabase
+# Set environment variables
+ENV POSTGRES_USER=user \
+    POSTGRES_PASSWORD=password \
+    POSTGRES_DB=mydatabase \
+    # Force group ID to match OpenShift's random UID requirements
+    POSTGRES_GROUP_ID=999
 
-# Copy the initialization script to the appropriate location
+# Create necessary directories with correct permissions upfront
+RUN mkdir -p /var/run/postgresql && \
+    chmod 775 /var/run/postgresql && \
+    chgrp ${POSTGRES_GROUP_ID} /var/run/postgresql && \
+    mkdir -p /var/lib/postgresql/data && \
+    chmod 775 /var/lib/postgresql/data && \
+    chgrp ${POSTGRES_GROUP_ID} /var/lib/postgresql/data
+
+# Copy initialization files
 COPY init.sql /docker-entrypoint-initdb.d/
-
-# Copy the permission-fixing script to the initialization directory
 COPY fix-permissions.sh /docker-entrypoint-initdb.d/
 
-# Expose the PostgreSQL default port
+# Ensure scripts are executable
+RUN chmod +x /docker-entrypoint-initdb.d/fix-permissions.sh
+
+# Drop root privileges
+USER postgres
+
 EXPOSE 5432
