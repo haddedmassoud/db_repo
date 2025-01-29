@@ -33,29 +33,29 @@ jobs:
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
 
-      # Step 5: Set up kubectl
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.27.3'  # Replace with your desired kubectl version
-
-      # Step 6: Configure kubectl with kubeconfig
-      - name: Configure kubectl
+      # Step 5: Install OpenShift CLI
+      - name: Install OpenShift CLI
         run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
-          export KUBECONFIG=kubeconfig
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xzf oc.tar.gz
+          sudo mv oc /usr/local/bin/
 
-      # Step 7: Update the image in postgres-deployment.yaml
+      # Step 6: Log in to OpenShift
+      - name: Log in to OpenShift
+        run: |
+          oc login --token=${{ secrets.OPENSHIFT_TOKEN }} --server=${{ secrets.OPENSHIFT_SERVER }}
+
+      # Step 7: Update the image in Deployment YAML
       - name: Update image in Deployment YAML
         run: |
           sed -i "s|your-registry/your-postgres-image:tag|ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest|" ./manifests/postgres-deployment.yaml
 
-      # Optional Debug Step: Verify manifests directory
-      - name: List files for debugging
+      # Step 8: Test OpenShift connection (Optional)
+      - name: Test OpenShift connection
         run: |
-          ls -R ./manifests
+          oc status
 
-      # Step 8: Apply Kubernetes manifests
+      # Step 9: Apply Kubernetes manifests
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply -f ./manifests/
+          oc apply -f ./manifests/
