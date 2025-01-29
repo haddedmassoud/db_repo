@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Fix permissions for PostgreSQL data directory
-chown -R postgres:postgres /var/lib/postgresql/data
-chmod -R 750 /var/lib/postgresql/data
+# Only modify permissions (without ownership changes)
+chmod 775 /var/lib/postgresql/data
+chmod 775 /var/run/postgresql
 
-echo "Permissions fixed for /var/lib/postgresql/data"
+echo "Permissions adjusted for PostgreSQL directories"
