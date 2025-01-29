@@ -1,4 +1,4 @@
-name: Build, Push Docker Container, and Apply Manifests
+name: Build, Push Docker Container, and Deploy to OpenShift
 
 on:
   push:
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-push-apply:
+  build-push-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code from your repository
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -50,12 +50,12 @@ jobs:
         run: |
           sed -i "s|your-registry/your-postgres-image:tag|ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest|" ./manifests/postgres-deployment.yaml
 
-      # Step 8: Test OpenShift connection (Optional)
-      - name: Test OpenShift connection
-        run: |
-          oc status
-
-      # Step 9: Apply Kubernetes manifests
+      # Step 8: Apply Kubernetes manifests in OpenShift
       - name: Apply Kubernetes manifests
         run: |
           oc apply -f ./manifests/
+
+      # Step 9: Verify Deployment (Optional)
+      - name: Verify Deployment
+        run: |
+          oc rollout status deployment/postgresql
